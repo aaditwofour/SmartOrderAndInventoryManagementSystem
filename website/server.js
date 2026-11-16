@@ -38,6 +38,53 @@ const loginAttemptWindows = new Map();
 const tokens = { accessToken: null, refreshToken: null, instanceUrl: null };
 const startupTime = new Date().toISOString();
 
+function tokenStorePath() {
+    return path.join(ROOT, '.oauth-secret', 'salesforce-tokens.json');
+}
+
+function tokenEncryptionKey() {
+    return crypto.createHash('sha256').update(idSecret).digest();
+}
+
+function loadStoredTokens() {
+    const file = tokenStorePath();
+    if (!idSecret || !fs.existsSync(file)) return;
+    try {
+        const stored = JSON.parse(fs.readFileSync(file, 'utf8'));
+        const decipher = crypto.createDecipheriv('aes-256-gcm', tokenEncryptionKey(), Buffer.from(stored.iv, 'base64'));
+        decipher.setAuthTag(Buffer.from(stored.tag, 'base64'));
+        const plaintext = Buffer.concat([
+            decipher.update(Buffer.from(stored.data, 'base64')),
+            decipher.final()
+        ]).toString('utf8');
+        const saved = JSON.parse(plaintext);
+        if (saved.accessToken && saved.refreshToken && saved.instanceUrl) Object.assign(tokens, saved);
+    } catch (error) {
+        console.error('Could not load the encrypted Salesforce session:', error.message);
+    }
+}
+
+function persistTokens() {
+    if (!idSecret || !tokens.accessToken || !tokens.refreshToken || !tokens.instanceUrl) return;
+    const directory = path.dirname(tokenStorePath());
+    fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', tokenEncryptionKey(), iv);
+    const encrypted = Buffer.concat([cipher.update(JSON.stringify(tokens), 'utf8'), cipher.final()]);
+    fs.writeFileSync(tokenStorePath(), JSON.stringify({
+        iv: iv.toString('base64'),
+        tag: cipher.getAuthTag().toString('base64'),
+        data: encrypted.toString('base64')
+    }), { mode: 0o600 });
+}
+
+function clearStoredTokens() {
+    try { fs.unlinkSync(tokenStorePath()); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+}
+
+loadStoredTokens();
+
 function loadEnv(file) {
     if (!fs.existsSync(file)) return;
     const rows = fs.readFileSync(file, 'utf8').split(/\r?\n/);
@@ -141,6 +188,7 @@ async function exchangeToken(params) {
     if (payload.refresh_token) tokens.refreshToken = payload.refresh_token;
     if (payload.instance_url) tokens.instanceUrl = getSalesforceInstanceUrl(payload.instance_url);
     if (!tokens.accessToken || !tokens.instanceUrl) throw new Error('Salesforce did not return an access token and instance URL.');
+    persistTokens();
 }
 
 async function refreshAccessToken() {
@@ -547,31 +595,105 @@ async function assistantQuery(req) {
     if (!question) throw Object.assign(new Error('Ask a question about a product.'), { statusCode: 400 });
     if (question.length > 200) throw Object.assign(new Error('That question is too long.'), { statusCode: 400 });
 
+    const catalog = await listProducts();
+    const matchedProducts = matchAssistantProducts(question, catalog.products);
+    if (matchedProducts.length) {
+        const currency = new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: STORE_CURRENCY,
+            maximumFractionDigits: 2
+        });
+        const answerLines = matchedProducts.map(({ product, quantity, explicitQuantity }) => {
+            const price = currency.format(Number(product.Unit_Price__c || 0));
+            const stock = Number(product.Available_Quantity__c || 0);
+            const requestedQuantity = explicitQuantity ? ` × ${quantity}` : '';
+            const lineTotal = explicitQuantity ? ` Line total: ${currency.format(Number(product.Unit_Price__c || 0) * quantity)}.` : '';
+            return `${product.Name} (${product.Product_Code__c})${requestedQuantity}: ${price} each; ${stock} available.${lineTotal}`;
+        });
+        if (matchedProducts.some(match => match.explicitQuantity)) {
+            const requestedTotal = matchedProducts.reduce((total, match) => total + Number(match.product.Unit_Price__c || 0) * match.quantity, 0);
+            answerLines.push(`Total for requested quantities: ${currency.format(requestedTotal)}.`);
+        }
+        return { source: 'salesforce', lookupType: 'CHECK_STOCK', lookupValue: matchedProducts.map(({ product }) => product.Product_Code__c).join(', '), answer: answerLines.join('\n') };
+    }
+
     const { lookupType, lookupValue } = classifyAssistantQuestion(question);
     const response = await salesforceRequest(
         `/services/apexrest/assistant/lookup?lookupType=${encodeURIComponent(lookupType)}&lookupValue=${encodeURIComponent(lookupValue)}`
     );
-    return { source: 'salesforce', lookupType, lookupValue, answer: response?.resultText || response?.result || 'I could not find an answer.' };
+    return { source: 'salesforce', lookupType, lookupValue, answer: lookupAnswerText(response) };
+}
+
+function matchAssistantProducts(question, products) {
+    const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+    const normalizedQuestion = ` ${normalize(question)} `;
+    return (products || []).map(product => {
+        const name = normalize(product.Name);
+        const code = normalize(product.Product_Code__c);
+        const positions = [name, code]
+            .filter(term => term)
+            .map(term => normalizedQuestion.indexOf(` ${term} `))
+            .filter(position => position >= 0);
+        if (!positions.length) return null;
+        const position = Math.min(...positions);
+        const prefix = normalizedQuestion.slice(0, position).trimEnd();
+        const quantityMatch = prefix.match(/(?:^|\s)(\d+)$/);
+        const requestedQuantity = quantityMatch ? Number(quantityMatch[1]) : null;
+        return {
+            product,
+            position,
+            explicitQuantity: Number.isInteger(requestedQuantity) && requestedQuantity > 0 && requestedQuantity <= 1000,
+            quantity: Number.isInteger(requestedQuantity) && requestedQuantity > 0 && requestedQuantity <= 1000 ? requestedQuantity : 1
+        };
+    }).filter(Boolean).sort((a, b) => a.position - b.position);
+}
+
+function lookupAnswerText(response) {
+    if (typeof response === 'string') {
+        const trimmed = response.trim();
+        if (!trimmed) return 'I could not find an answer.';
+        try {
+            const decoded = JSON.parse(trimmed);
+            if (typeof decoded === 'string') return decoded || 'I could not find an answer.';
+            if (decoded && typeof decoded === 'object') {
+                return decoded.resultText || decoded.result || 'I could not find an answer.';
+            }
+        } catch { /* A plain text Salesforce result is also valid. */ }
+        return trimmed;
+    }
+    return response?.resultText || response?.result || 'I could not find an answer.';
+}
+
+async function assistantOrderQuery(req) {
+    const body = await parseBody(req);
+    const question = String(body.question || '').trim();
+    if (!question) throw Object.assign(new Error('Ask about your order.'), { statusCode: 400 });
+    const customerEmail = requireCustomerSession(req);
+    const orderNumber = question.match(/\b[A-Z]{2,8}-\d{3,}\b/i)?.[0]
+        || question.match(/\b[a-z0-9]{15}(?:[a-z0-9]{3})?\b/i)?.[0];
+    if (!orderNumber) return { source: 'salesforce', answer: 'Please include your Salesforce order number (for example, SO-0001).' };
+    const answer = await callAssistantLookup('ORDER_DETAILS', orderNumber, customerEmail);
+    return { source: 'salesforce', answer };
 }
 
 function classifyAssistantQuestion(question) {
-    const lower = question.toLowerCase();
     const keywords = extractKeywords(question);
-    const hasStockSignal = /\b(stock|available|in stock|how many|quantity|left|inventory|low stock|reorder)\b/.test(lower);
-    const hasPriceSignal = /\b(price|cost|how much|rs\.?\s*\d|rupees|amount|how many rupees)\b/.test(lower);
-
-    if (!keywords) return { lookupType: 'CHECK_STOCK', lookupValue: '' };
-
-    if (hasPriceSignal || hasStockSignal) {
-        return { lookupType: 'CHECK_STOCK', lookupValue: keywords };
-    }
     return { lookupType: 'CHECK_STOCK', lookupValue: keywords };
 }
 
 function extractKeywords(question) {
-    const stopWords = new Set(['the', 'a', 'an', 'is', 'are', 'do', 'you', 'have', 'has', 'in', 'on', 'for', 'of', 'to', 'with', 'about', 'what', 'how', 'much', 'many', 'at', 'my', 'our', 'i', 'we', 'please', 'can', 'could', 'would', 'should', 'stock', 'available']);
+    // Remove question and lookup intent words so Salesforce receives only the
+    // product name/code. Including words such as "price" in the search string
+    // made otherwise valid requests (for example, "price of LAP-001") miss.
+    const stopWords = new Set([
+        'a', 'about', 'and', 'any', 'are', 'at', 'available', 'availability', 'can', 'check', 'cost',
+        'could', 'currently', 'do', 'does', 'for', 'have', 'has', 'how', 'in', 'inventory', 'is',
+        'left', 'many', 'much', 'my', 'of', 'on', 'our', 'please', 'price', 'quantity', 'reorder',
+        'right', 'rupee', 'rupees', 'rs', 'should', 'stock', 'the', 'there', 'today', 'we', 'what',
+        'when', 'where', 'which', 'with', 'would', 'you', 'your'
+    ]);
     const tokens = question.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter(Boolean);
-    const meaningful = tokens.filter(token => !stopWords.has(token) && token.length > 1);
+    const meaningful = tokens.filter(token => !stopWords.has(token) && token.length > 1 && !/^\d+$/.test(token));
     return meaningful.join(' ');
 }
 
@@ -652,7 +774,7 @@ async function callAssistantLookup(lookupType, lookupValue, customerEmail = '') 
     const response = await salesforceRequest(
         `/services/apexrest/assistant/lookup?lookupType=${encodeURIComponent(lookupType)}&lookupValue=${encodeURIComponent(lookupValue)}${customerEmail ? `&customerEmail=${encodeURIComponent(customerEmail)}` : ''}`
     );
-    return response?.resultText || response?.result || 'No result returned.';
+    return lookupAnswerText(response);
 }
 
 async function geminiChat(req) {
@@ -673,6 +795,7 @@ async function geminiChat(req) {
     try {
         result = await chat.sendMessage(message);
     } catch (error) {
+        console.error('Gemini assistant request failed:', error?.status || error?.message || 'Unknown Gemini error');
         throw Object.assign(new Error('The AI assistant could not respond. Please try again.'), { statusCode: 502 });
     }
 
@@ -748,6 +871,7 @@ async function handleApi(req, res, url) {
             tokens.accessToken = null;
             tokens.refreshToken = null;
             tokens.instanceUrl = null;
+            clearStoredTokens();
             return sendJson(res, 200, { connected: false });
         }
         if (req.method === 'POST' && url.pathname === '/api/orders') {
@@ -784,6 +908,9 @@ async function handleApi(req, res, url) {
         }
         if (req.method === 'POST' && url.pathname === '/api/assistant/query') {
             return sendJson(res, 200, await assistantQuery(req));
+        }
+        if (req.method === 'POST' && url.pathname === '/api/assistant/order') {
+            return sendJson(res, 200, await assistantOrderQuery(req));
         }
         if (req.method === 'POST' && url.pathname === '/api/chat') {
             return sendJson(res, 200, await geminiChat(req));

@@ -213,30 +213,24 @@ async function assistantAsk(event) {
     assistantPush(question, 'user');
     input.value = '';
     assistantThinking(true);
+    const orderQuestion = /\b(order|invoice|track|tracking|shipment|delivery)\b/i.test(question);
+    const productQuestion = /\b(product|price|cost|stock|available|availability|inventory|quantity|reorder|laptop|mouse|keyboard|monitor|headphones?)\b/i.test(question)
+        || /\b[A-Z]{2,8}-\d{3,}\b/i.test(question);
     try {
-        // Use Gemini chat if Salesforce is connected; otherwise direct Apex lookup
         let data;
-        if (state.status?.connected && state.status?.geminiConfigured) {
+        if (orderQuestion) {
+            data = await api('/api/assistant/order', { method: 'POST', body: JSON.stringify({ question }) });
+        } else if (productQuestion || !state.status?.geminiConfigured) {
+            data = await api('/api/assistant/query', { method: 'POST', body: JSON.stringify({ question }) });
+        } else if (state.status?.connected && state.status?.geminiConfigured) {
             data = await api('/api/chat', { method: 'POST', body: JSON.stringify({ message: question }) });
         } else {
-            data = await api('/api/assistant/query', { method: 'POST', body: JSON.stringify({ question }) });
+            assistantPush('I can help with product prices, stock, and order tracking. Ask about a product, or sign in to track an order.', 'bot');
+            return;
         }
         assistantPush(data.answer || data.resultText || 'I could not find an answer.', 'bot');
     } catch (error) {
-        const orderQuestion = /\b(order|invoice|track|tracking|shipment|delivery)\b/i.test(question);
-        if (state.status?.connected && !orderQuestion) {
-            try {
-                const fallback = await api('/api/assistant/query', {
-                    method: 'POST',
-                    body: JSON.stringify({ question })
-                });
-                assistantPush(fallback.answer || 'I could not find an answer.', 'bot');
-            } catch (fallbackError) {
-                assistantPush(fallbackError.message || 'I could not answer that question.', 'bot');
-            }
-        } else {
-            assistantPush(error.message || 'I could not answer that question.', 'bot');
-        }
+        assistantPush(error.message || 'I could not answer that question.', 'bot');
     } finally {
         assistantThinking(false);
     }
