@@ -1,0 +1,19 @@
+# Environment secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Salesforce CLI local state
+.sf/
+.sfdx/
+
+# Website local dependencies and OAuth state
+website/node_modules/
+website/.oauth-secret/
+
+# Logs
+npm-debug.log*
+*.log

@@ -1,0 +1,6 @@
+Product_Code__c,Name,Unit_Price__c,Available_Quantity__c,Reorder_Level__c,Active__c
+LAP-001,Laptop,55000,20,5,true
+MOU-001,Mouse,800,50,10,true
+KEY-001,Keyboard,1500,30,5,true
+MON-001,Monitor,12000,15,5,true
+HDR-001,Headphones,2500,40,10,true

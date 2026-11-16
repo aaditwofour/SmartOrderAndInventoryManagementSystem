@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns>
+        <field>CUST_NAME</field>
+    </columns>
+    <columns>
+        <field>Product__c.Product_Code__c</field>
+    </columns>
+    <columns>
+        <field>Product__c.Available_Quantity__c</field>
+    </columns>
+    <columns>
+        <field>Product__c.Reorder_Level__c</field>
+    </columns>
+    <columns>
+        <field>Product__c.Low_Stock__c</field>
+    </columns>
+    <description>Active product stock at or below its configured reorder level.</description>
+    <filter>
+        <criteriaItems>
+            <column>Product__c.Low_Stock__c</column>
+            <operator>equals</operator>
+            <value>true</value>
+        </criteriaItems>
+    </filter>
+    <format>Tabular</format>
+    <name>Low Stock Products</name>
+    <reportType>CustomEntity$Product__c</reportType>
+    <scope>user</scope>
+    <showDetails>true</showDetails>
+</Report>

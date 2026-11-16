@@ -1,0 +1,56 @@
+<template>
+    <lightning-card title="Inventory &amp; Order Overview" icon-name="standard:dashboard">
+        <div slot="actions">
+            <lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh dashboard" title="Refresh" onclick={handleRefresh}></lightning-button-icon>
+        </div>
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading dashboard"></lightning-spinner>
+            </template>
+
+            <div class="slds-grid slds-wrap slds-gutters">
+                <section class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                    <lightning-card title="Low Stock Products" icon-name="standard:product">
+                        <template if:true={lowStockError}>
+                            <p class="slds-p-around_medium slds-text-color_error">{lowStockError}</p>
+                        </template>
+                        <template if:true={lowStockProducts}>
+                            <template if:true={hasLowStockProducts}>
+                                <lightning-datatable
+                                    key-field="id"
+                                    data={lowStockProducts}
+                                    columns={productColumns}
+                                    hide-checkbox-column>
+                                </lightning-datatable>
+                            </template>
+                            <template if:false={hasLowStockProducts}>
+                                <div class="slds-p-around_medium slds-text-color_weak">No active products are below their reorder level.</div>
+                            </template>
+                        </template>
+                    </lightning-card>
+                </section>
+
+                <section class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                    <lightning-card title="Orders by Status" icon-name="standard:orders">
+                        <template if:true={orderStatusError}>
+                            <p class="slds-p-around_medium slds-text-color_error">{orderStatusError}</p>
+                        </template>
+                        <template if:true={orderStatusSummary}>
+                            <template if:true={hasOrderStatuses}>
+                                <lightning-datatable
+                                    key-field="status"
+                                    data={orderStatusSummary}
+                                    columns={orderColumns}
+                                    hide-checkbox-column>
+                                </lightning-datatable>
+                            </template>
+                            <template if:false={hasOrderStatuses}>
+                                <div class="slds-p-around_medium slds-text-color_weak">No sales orders are available.</div>
+                            </template>
+                        </template>
+                    </lightning-card>
+                </section>
+            </div>
+        </div>
+    </lightning-card>
+</template>

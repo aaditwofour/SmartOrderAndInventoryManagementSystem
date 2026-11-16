@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ReportType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <baseObject>Product__c</baseObject>
+    <category>products</category>
+    <deployed>true</deployed>
+    <description>Product inventory including quantities, reorder levels, and low-stock status.</description>
+    <label>Inventory Products</label>
+    <sections>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Name</field>
+            <table>Product__c</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Product_Code__c</field>
+            <table>Product__c</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Available_Quantity__c</field>
+            <table>Product__c</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Reorder_Level__c</field>
+            <table>Product__c</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Low_Stock__c</field>
+            <table>Product__c</table>
+        </columns>
+        <masterLabel>Product Fields</masterLabel>
+    </sections>
+</ReportType>

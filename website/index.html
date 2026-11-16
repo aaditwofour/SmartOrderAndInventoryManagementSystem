@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#123a35">
+    <meta name="description" content="Browse the catalog, check live stock, and place an order. Orders are managed in Salesforce.">
+    <title>Field & Form — Product Store</title>
+    <link rel="stylesheet" href="/styles.css?v=customer-crm-sync-1">
+    <script src="/app.js?v=customer-crm-sync-1" defer></script>
+</head>
+<body>
+    <div class="preview-banner hidden" id="previewBanner">
+        Preview catalog is shown. Connect Salesforce to load live stock and place orders.
+    </div>
+    <header class="site-header">
+        <a class="brand" href="#top" aria-label="Field and Form home">
+            <span class="brand-mark"><span></span><span></span><span></span></span>
+            <span class="brand-copy"><strong>field &amp; form</strong><small>SUPPLY CO.</small></span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="#catalog">Shop</a>
+            <a href="#story">Our standard</a>
+            <button class="nav-text-button" id="customerSignIn">Sign in</button>
+            <button class="nav-text-button" id="adminOpen">Store admin</button>
+        </nav>
+        <div class="header-actions">
+            <span class="connection-pill" id="connectionPill"><i></i><span>Checking store</span></span>
+            <button class="icon-button cart-toggle" id="cartToggle" aria-label="View shopping bag below the product list">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
+                <span class="cart-count" id="cartCount">0</span>
+            </button>
+        </div>
+    </header>
+
+    <main id="top">
+        <section class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow"><span class="eyebrow-line"></span> GOODS FOR GOOD WORK</p>
+                <h1>Useful things.<br><em>Thoughtfully chosen.</em></h1>
+                <p class="hero-description">A considered collection of everyday essentials, made to work hard and last longer.</p>
+                <a class="button button-dark" href="#catalog">Explore the collection <span aria-hidden="true">↗</span></a>
+                <div class="hero-note"><span class="note-star">✳</span> Live availability is checked at checkout.</div>
+            </div>
+            <div class="hero-art" aria-label="Illustration of a product package and leaves">
+                <div class="hero-sun"></div><div class="hero-ring"></div>
+                <div class="hero-box"><div class="box-label"><span>F&amp;F</span><b>ESSENTIALS<br>NO. 04</b><small>MADE FOR THE EVERYDAY</small></div><div class="box-flap"></div></div>
+                <div class="leaf leaf-one"></div><div class="leaf leaf-two"></div><div class="leaf leaf-three"></div>
+                <div class="hero-spark spark-one">✳</div><div class="hero-spark spark-two">✦</div>
+                <span class="art-caption">A LITTLE MORE<br>CONSIDERED</span>
+            </div>
+            <div class="hero-footer"><span>BUILT FOR THE LONG HAUL</span><span>CURATED GOODS · RESPONSIBLE SOURCING</span><span>01 — 04</span></div>
+        </section>
+
+        <section class="trust-strip" aria-label="Store benefits">
+            <div><span class="trust-icon">✳</span><strong>Thoughtful by design</strong><small>Everyday goods with purpose</small></div>
+            <div><span class="trust-icon">↗</span><strong>Ready when you are</strong><small>Stock checked with every order</small></div>
+            <div><span class="trust-icon">⌂</span><strong>Made to make sense</strong><small>Practical, lasting essentials</small></div>
+        </section>
+
+        <section class="catalog-section" id="catalog">
+            <div class="section-heading">
+                <div><p class="eyebrow">THE COLLECTION</p><h2>Good things, <em>well made.</em></h2></div>
+                <p class="section-note">Selected for quality, usefulness, and the small details that make a difference.</p>
+            </div>
+            <div class="catalog-toolbar">
+                <div class="category-filters" id="categoryFilters" aria-label="Filter products"></div>
+                <label class="search-box">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+                    <input type="search" id="productSearch" placeholder="Find something useful" autocomplete="off">
+                </label>
+            </div>
+            <div class="catalog-status" id="catalogStatus" aria-live="polite">Loading the collection…</div>
+            <div class="product-grid" id="productGrid"></div>
+            <div class="empty-state hidden" id="emptyState"><span>✳</span><h3>No matches just yet.</h3><p>Try another search or browse the full collection.</p></div>
+            <section class="shopping-bag-section" id="shoppingBag" aria-labelledby="cartTitle">
+                <div class="drawer-header"><div><p class="eyebrow">YOUR SELECTION</p><h2 id="cartTitle">Shopping bag <span id="cartHeadingCount">(0)</span></h2></div></div>
+                <div class="cart-items" id="cartItems"></div>
+                <div class="cart-empty" id="cartEmpty"><span>✳</span><h3>Your bag is empty.</h3><p>Add something useful from the collection above.</p><button class="text-link" id="continueShopping" type="button">Back to products <span>↑</span></button></div>
+                <div class="cart-summary hidden" id="cartSummary"><div class="subtotal-row"><span>Estimated subtotal</span><strong id="cartSubtotal">₹0.00</strong></div><small>Final availability and order total are confirmed in Salesforce.</small><button class="button button-dark checkout-button" id="checkoutOpen" type="button">Continue to checkout <span>↗</span></button></div>
+            </section>
+        </section>
+
+        <section class="story-section" id="story">
+            <div class="story-art"><div class="story-circle"></div><div class="story-lines"></div><span class="story-stamp">LESS, BUT<br>BETTER.</span></div>
+            <div class="story-copy"><p class="eyebrow">OUR STANDARD</p><h2>Useful should<br><em>feel good, too.</em></h2><p>We believe the best things earn their place: considered materials, honest utility, and quality you can feel in your hands. A smaller collection, chosen with care.</p><a href="#catalog" class="text-link">Find your everyday essential <span>→</span></a></div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <a class="brand brand-footer" href="#top"><span class="brand-mark"><span></span><span></span><span></span></span><span class="brand-copy"><strong>field &amp; form</strong><small>SUPPLY CO.</small></span></a>
+        <span>GOOD GOODS. GOOD SENSE.</span><span>© <span id="year"></span> FIELD &amp; FORM</span>
+    </footer>
+
+    <dialog class="modal" id="checkoutModal">
+        <form id="checkoutForm">
+            <div class="modal-header"><div><p class="eyebrow">ONE LAST THING</p><h2>Your details</h2></div><button class="close-button" type="button" data-close="checkoutModal" aria-label="Close checkout">×</button></div>
+            <p class="modal-intro">We’ll save your customer record and contact in Salesforce. Business customers are also linked to a Salesforce account.</p>
+            <div class="form-grid">
+                <label class="form-field span-two"><span>Full name</span><input name="name" autocomplete="name" required maxlength="120" placeholder="Your name"></label>
+                <label class="form-field"><span>Email address</span><input name="email" type="email" autocomplete="email" required maxlength="120" placeholder="you@example.com"></label>
+                <label class="form-field"><span>Phone <small>optional</small></span><input name="phone" type="tel" autocomplete="tel" maxlength="40" placeholder="Your phone number"></label>
+                <label class="form-field span-two"><span>Billing address <small>optional</small></span><input name="billingAddress" autocomplete="street-address" maxlength="255" placeholder="Street, city, postal code"></label>
+                <label class="form-field"><span>Customer type</span><select name="customerType"><option value="Individual">Individual</option><option value="Business">Business</option></select></label>
+                <label class="form-field span-two hidden" id="businessNameField"><span>Business name</span><input name="businessName" autocomplete="organization" maxlength="120" placeholder="Your company name" disabled></label>
+            </div>
+            <div class="privacy-note"><span>↗</span><p>Your order details are sent securely to Salesforce to create the customer, order, and order items.</p></div>
+            <p class="form-error hidden" id="checkoutError" role="alert"></p>
+            <div class="modal-actions"><button class="button button-light" type="button" data-close="checkoutModal">Back to bag</button><button class="button button-dark" id="placeOrderButton" type="submit">Place order <span>↗</span></button></div>
+        </form>
+    </dialog>
+
+    <dialog class="modal customer-login-modal" id="customerLoginModal">
+        <div class="modal-header"><div><p class="eyebrow">YOUR FIELD &amp; FORM ACCOUNT</p><h2 id="customerLoginTitle">Sign in</h2></div><button class="close-button" type="button" data-close="customerLoginModal" aria-label="Close sign in">×</button></div>
+        <p class="modal-intro" id="customerLoginHelp">Sign in with a one-time code sent to the email on your customer account. We’ll use it to fill your checkout details.</p>
+        <div id="customerSignedOutView">
+            <form id="customerEmailForm">
+                <label class="form-field"><span>Email address</span><input id="customerLoginEmail" type="email" required maxlength="120" autocomplete="email" placeholder="you@example.com"></label>
+                <p class="form-error hidden" id="customerEmailError" role="alert"></p>
+                <div class="modal-actions"><span></span><button class="button button-dark" id="requestCodeButton" type="submit">Email me a code <span>↗</span></button></div>
+            </form>
+            <form id="customerCodeForm" class="hidden">
+                <p class="form-help" id="customerCodeMessage">Enter the six-digit sign-in code sent to your email.</p>
+                <label class="form-field"><span>One-time code</span><input id="customerLoginCode" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{6}" maxlength="6" placeholder="123456"></label>
+                <p class="form-error hidden" id="customerCodeError" role="alert"></p>
+                <div class="modal-actions"><button class="button button-light" id="changeLoginEmail" type="button">Change email</button><button class="button button-dark" id="verifyCodeButton" type="submit">Verify &amp; sign in <span>↗</span></button></div>
+            </form>
+        </div>
+        <div class="customer-signed-in hidden" id="customerSignedInView">
+            <div class="admin-connection-card"><span class="admin-connection-dot is-connected"></span><div><strong id="customerProfileName"></strong><small id="customerProfileEmail"></small></div></div>
+            <p class="form-help">Your saved customer details will fill checkout automatically.</p>
+            <div class="modal-actions"><button class="button button-light" id="customerSignOut" type="button">Sign out</button><button class="button button-dark" type="button" data-close="customerLoginModal">Continue shopping</button></div>
+        </div>
+    </dialog>
+
+    <dialog class="modal admin-modal" id="adminModal">
+        <div class="modal-header"><div><p class="eyebrow">STORE SETTINGS</p><h2>Store admin</h2></div><button class="close-button" type="button" data-close="adminModal" aria-label="Close store admin">×</button></div>
+        <p class="modal-intro">Connect this storefront to Salesforce. OAuth credentials and tokens stay on this server.</p>
+        <label class="form-field"><span>Website admin key</span><input id="adminKeyInput" type="password" autocomplete="current-password" placeholder="Enter the key set on the website server"></label>
+        <p class="form-help">The key is checked by the server and kept in this browser session only.</p>
+        <div class="admin-connection-card"><span class="admin-connection-dot" id="adminConnectionDot"></span><div><strong id="adminConnectionTitle">Salesforce status</strong><small id="adminConnectionHelp">Checking connection…</small></div></div>
+        <p class="form-error hidden" id="adminError" role="alert"></p>
+        <div class="modal-actions modal-actions-stack"><button class="button button-dark" id="connectSalesforceButton" type="button">Connect Salesforce <span>↗</span></button><button class="button button-light hidden" id="disconnectSalesforceButton" type="button">Disconnect</button></div>
+        <section class="admin-orders-dashboard" aria-labelledby="adminOrdersTitle">
+            <div class="admin-orders-heading"><div><p class="eyebrow">LIVE SALESFORCE DATA</p><h3 id="adminOrdersTitle">Order dashboard</h3></div><button class="button button-light" id="refreshOrdersButton" type="button" disabled>Refresh</button></div>
+            <p class="form-help">Recent orders and active order totals. Customer names are visible to the store admin only.</p>
+            <div class="order-metrics hidden" id="orderMetrics">
+                <div><span>Active orders</span><strong id="activeOrderCount">0</strong></div>
+                <div><span>Awaiting approval</span><strong id="approvalOrderCount">0</strong></div>
+                <div><span>Processing</span><strong id="processingOrderCount">0</strong></div>
+                <div><span>Active order value</span><strong id="activeOrderValue">₹0</strong></div>
+            </div>
+            <p class="form-error hidden" id="ordersDashboardError" role="alert"></p>
+            <div class="order-table-wrap">
+                <table class="order-dashboard-table">
+                    <thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Approval</th><th>Total</th></tr></thead>
+                    <tbody id="orderDashboardRows"><tr><td colspan="5">Enter the website admin key, connect Salesforce, then refresh orders.</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+        <div class="admin-divider"></div>
+        <div class="modal-header admin-products-heading"><div><p class="eyebrow">CATALOG MANAGEMENT</p><h3>Add a product</h3></div></div>
+        <p class="form-help">Products created here are saved to the connected Salesforce catalog.</p>
+        <form id="productForm" class="form-grid admin-product-form">
+            <label class="form-field span-two"><span>Product name</span><input name="name" required maxlength="80" placeholder="A useful thing"></label>
+            <label class="form-field"><span>Product code</span><input name="productCode" required maxlength="80" placeholder="SKU-001"></label>
+            <label class="form-field"><span>Unit price</span><input name="unitPrice" type="number" min="0" step="0.01" required placeholder="0.00"></label>
+            <label class="form-field"><span>Available quantity</span><input name="availableQuantity" type="number" min="0" step="1" required placeholder="0"></label>
+            <label class="form-field"><span>Reorder level</span><input name="reorderLevel" type="number" min="0" step="1" required placeholder="0"></label>
+            <label class="form-field span-two"><span>Description</span><textarea name="description" maxlength="255" rows="3" placeholder="A few words about the product"></textarea></label>
+            <p class="form-error hidden span-two" id="productError" role="alert"></p>
+            <div class="modal-actions span-two"><span></span><button class="button button-dark" type="submit" id="saveProductButton">Save product <span>↗</span></button></div>
+        </form>
+    </dialog>
+
+    <dialog class="modal result-modal" id="resultModal">
+        <button class="close-button result-close" type="button" data-close="resultModal" aria-label="Close order confirmation">×</button>
+        <div class="result-icon">✓</div><p class="eyebrow">ORDER RECEIVED</p><h2 id="resultTitle">Thank you.</h2>
+        <p class="result-copy" id="resultCopy"></p>
+        <div class="result-details"><div><span>Order number</span><strong id="resultOrderNumber">—</strong></div><div><span>Status</span><strong id="resultStatus">—</strong></div><div><span>Approval</span><strong id="resultApproval">—</strong></div><div><span>Order total</span><strong id="resultTotal">—</strong></div></div>
+        <button class="button button-dark result-button" type="button" data-close="resultModal">Back to the collection</button>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <aside class="assistant" id="assistant" aria-label="Store assistant">
+        <div class="assistant-launch" id="assistantLaunch" type="button" aria-label="Open store assistant" aria-expanded="false">
+            <svg class="assistant-launch-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z"/><path d="M19 10h-2a6 6 0 0 1-10 0H5a6 6 0 0 1 0 12h2a4 4 0 0 0 4-4h2a4 4 0 0 0 4 4h2a6 6 0 0 1 0-12Z"/></svg>
+            <span class="assistant-launch-text">Ask the store</span>
+        </div>
+        <div class="assistant-panel" id="assistantPanel" aria-hidden="true">
+            <div class="assistant-head">
+                <div>
+                    <p class="eyebrow">STORE ASSISTANT</p>
+                    <h2>Ask about products</h2>
+                </div>
+                <button class="icon-button" id="assistantClose" aria-label="Close assistant" type="button">×</button>
+            </div>
+            <div class="assistant-body" id="assistantBody">
+                <div class=”assistant-message assistant-message-bot”>
+                    <span class=”assistant-avatar”>✦</span>
+                    <div class=”assistant-bubble”>Hi! I can answer questions about our products — prices, stock, and availability. Try asking <em>”Is the laptop in stock?”</em> or <em>”What is the price of the keyboard?”</em>. Connect Salesforce in Store admin for full AI assistance.</div>
+                </div>
+            </div>
+            <form class="assistant-input" id="assistantForm">
+                <input type="text" id="assistantInput" placeholder="Ask about a product…" autocomplete="off" maxlength="200">
+                <button type="submit" id="assistantSend" class="button button-dark">Send</button>
+            </form>
+        </div>
+    </aside>
+</body>
+</html>

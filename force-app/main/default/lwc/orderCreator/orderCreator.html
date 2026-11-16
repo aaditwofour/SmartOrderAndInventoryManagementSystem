@@ -1,0 +1,60 @@
+<template>
+    <lightning-card title="Create Customer Order" icon-name="standard:orders">
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <lightning-record-picker
+                label="Customer"
+                placeholder="Search customers..."
+                object-api-name="Customer__c"
+                value={customerId}
+                onchange={handleCustomerChange}
+                required>
+            </lightning-record-picker>
+
+            <template for:each={lines} for:item="line">
+                <div key={line.key} class="slds-grid slds-gutters slds-m-top_small slds-grid_vertical-align-end">
+                    <div class="slds-col slds-size_8-of-12">
+                        <lightning-record-picker
+                            label="Product"
+                            placeholder="Search products..."
+                            object-api-name="Product__c"
+                            value={line.productId}
+                            data-key={line.key}
+                            onchange={handleProductChange}
+                            required>
+                        </lightning-record-picker>
+                    </div>
+                    <div class="slds-col slds-size_3-of-12">
+                        <lightning-input
+                            type="number"
+                            label="Quantity"
+                            min="1"
+                            step="1"
+                            value={line.quantity}
+                            data-key={line.key}
+                            onchange={handleQuantityChange}
+                            required>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_1-of-12">
+                        <lightning-button-icon
+                            icon-name="utility:delete"
+                            alternative-text="Remove line"
+                            title="Remove line"
+                            data-key={line.key}
+                            onclick={removeLine}
+                            disabled={isOnlyLine}>
+                        </lightning-button-icon>
+                    </div>
+                </div>
+            </template>
+
+            <div class="slds-m-top_medium slds-grid slds-grid_align-spread">
+                <lightning-button label="Add Product" icon-name="utility:add" onclick={addLine} disabled={isBusy}></lightning-button>
+                <lightning-button variant="brand" label="Create & Submit Order" onclick={handleCreate} disabled={disableCreate}></lightning-button>
+            </div>
+            <template if:true={isBusy}>
+                <lightning-spinner alternative-text="Creating order"></lightning-spinner>
+            </template>
+        </div>
+    </lightning-card>
+</template>

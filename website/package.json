@@ -1,0 +1,15 @@
+{
+  "name": "smart-order-storefront",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Salesforce-connected product catalog and customer order website",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
+  }
+}
