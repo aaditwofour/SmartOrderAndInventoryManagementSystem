@@ -92,21 +92,24 @@ public with sharing class OrderAssistantLookupAction {
         if (String.isBlank(lookupValue)) return 'Enter a Salesforce order number or record ID.';
         String key = lookupValue.trim();
         String verifiedEmail = String.isBlank(customerEmail) ? null : customerEmail.trim().toLowerCase();
-        List<Sales_Order__c> orders;
+        String queryString = 'SELECT Name, Customer__r.Name, Customer__r.Email__c, Order_Date__c, Order_Status__c, '
+            + 'Approval_Status__c, Order_Total__c, Sync_Status__c FROM Sales_Order__c WHERE ';
+        Map<String, Object> bindValues = new Map<String, Object>();
         if (key.length() == 15 || key.length() == 18) {
-            Id orderId = Id.valueOf(key);
-            orders = [
-                SELECT Name, Customer__r.Name, Customer__r.Email__c, Order_Date__c, Order_Status__c,
-                    Approval_Status__c, Order_Total__c, Sync_Status__c
-                FROM Sales_Order__c WHERE Id=:orderId AND (:verifiedEmail = null OR Customer__r.Email__c = :verifiedEmail) WITH USER_MODE LIMIT 1
-            ];
+            bindValues.put('orderId', Id.valueOf(key));
+            queryString += 'Id = :orderId';
         } else {
-            orders = [
-                SELECT Name, Customer__r.Name, Customer__r.Email__c, Order_Date__c, Order_Status__c,
-                    Approval_Status__c, Order_Total__c, Sync_Status__c
-                FROM Sales_Order__c WHERE Name=:key AND (:verifiedEmail = null OR Customer__r.Email__c = :verifiedEmail) WITH USER_MODE LIMIT 1
-            ];
+            bindValues.put('key', key);
+            queryString += 'Name = :key';
         }
+        if (verifiedEmail != null) {
+            bindValues.put('verifiedEmail', verifiedEmail);
+            queryString += ' AND Customer__r.Email__c = :verifiedEmail';
+        }
+        queryString += ' LIMIT 1';
+        List<Sales_Order__c> orders = (List<Sales_Order__c>) Database.queryWithBinds(
+            queryString, bindValues, AccessLevel.USER_MODE
+        );
         if (orders.isEmpty()) return 'No matching order was found or the order is not visible to you.';
 
         Sales_Order__c orderRecord = orders[0];
