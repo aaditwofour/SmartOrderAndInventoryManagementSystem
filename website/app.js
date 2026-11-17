@@ -52,6 +52,16 @@ function renderCategories() {
     root.dataset.active = 'All items';
 }
 
+function renderQuickCategories() {
+    const root = $('#quickCategoryGrid');
+    const groups = [...new Set(state.products.map(product => product.Category__c).filter(Boolean))];
+    const entries = groups.length
+        ? groups.slice(0, 6).map(name => ({ name, query: name, category: name }))
+        : [...new Map(state.products.map(product => [product.Name, { name: product.Name, query: product.Name, category: '' }])).values()].slice(0, 6);
+    const icons = ['▣', '⌨', '◉', '▤', '♫', '✦'];
+    root.innerHTML = entries.map((entry, index) => `<button class="quick-category-card" type="button" data-quick-query="${html(entry.query)}" data-quick-category="${html(entry.category)}"><span class="quick-category-icon">${icons[index % icons.length]}</span><strong>${html(entry.name)}</strong><small>Shop now <span>↗</span></small></button>`).join('');
+}
+
 function filteredProducts() {
     const query = $('#productSearch').value.trim().toLowerCase();
     const category = $('#categoryFilters').dataset.active || 'All items';
@@ -75,7 +85,7 @@ function renderProducts() {
             <div class="product-image ${productArtClass(product, index)}" aria-hidden="true"><span class="product-ribbon">${html(product.Product_Code__c || 'F&amp;F ESSENTIAL')}</span><span class="stock-badge${available <= Number(product.Reorder_Level__c || 0) && !preview ? ' low' : ''}"></span><div class="product-shape"><span class="shape-mark">F&amp;F</span><span class="shape-lines">EVERYDAY<br>ESSENTIALS</span><span class="shape-code">${String(index + 1).padStart(2, '0')} / FIELD</span></div></div>
             <div class="product-info"><div class="product-meta"><span>${html(product.Product_Code__c || 'FIELD & FORM')}</span><span>${html(stockLabel)}</span></div>
             <h3 class="product-name">${html(product.Name)}</h3><p class="product-description">${html(description)}</p>
-            <div class="product-buy"><strong class="product-price">${money(product.Unit_Price__c)}</strong><button class="add-to-bag" type="button" data-add="${html(product.Id)}" aria-label="Add ${html(product.Name)} to cart" title="Add ${html(product.Name)} to cart" ${(!preview && available < 1) ? 'disabled' : ''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.1a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span>Add to cart</span>${quantity ? `<b class="product-cart-quantity" aria-label="${quantity} in cart">${quantity}</b>` : ''}</button></div></div>
+            <div class="product-buy"><strong class="product-price">${money(product.Unit_Price__c)}</strong><button class="add-to-bag" type="button" data-add="${html(product.Id)}" aria-label="Add ${html(product.Name)} to cart" title="Add ${html(product.Name)} to cart" ${(!preview && available < 1) ? 'disabled' : ''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.1a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>${quantity ? `<b class="product-cart-quantity" aria-label="${quantity} in cart">${quantity}</b>` : ''}</button></div></div>
         </article>`;
     }).join('');
     $('#emptyState').classList.toggle('hidden', products.length > 0);
@@ -152,6 +162,7 @@ async function refreshCatalog() {
     state.currency = status.currency || 'INR';
     renderConnection();
     renderCategories();
+    renderQuickCategories();
     renderProducts();
     renderCart();
 }
@@ -457,6 +468,22 @@ $('#assistantLaunch').addEventListener('click', () => assistantToggle());
 $('#assistantClose').addEventListener('click', () => assistantToggle(false));
 $('#assistantForm').addEventListener('submit', assistantAsk);
 $('#productSearch').addEventListener('input', renderProducts);
+
+$('#quickCategoryGrid').addEventListener('click', event => {
+    const card = event.target.closest('[data-quick-query]');
+    if (!card) return;
+    if (card.dataset.quickCategory) {
+        $('#categoryFilters').dataset.active = card.dataset.quickCategory;
+        $('#categoryFilters').querySelectorAll('.category-chip').forEach(chip => chip.classList.toggle('is-active', chip.dataset.category === card.dataset.quickCategory));
+        $('#productSearch').value = '';
+    } else {
+        $('#categoryFilters').dataset.active = 'All items';
+        $('#categoryFilters').querySelectorAll('.category-chip').forEach((chip, index) => chip.classList.toggle('is-active', index === 0));
+        $('#productSearch').value = card.dataset.quickQuery;
+    }
+    renderProducts();
+    $('#catalog').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 $('#categoryFilters').addEventListener('click', event => {
     const button = event.target.closest('[data-category]');
     if (!button) return;

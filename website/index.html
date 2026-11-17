@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#123a35">
     <meta name="description" content="Browse the catalog, check live stock, and place an order. Orders are managed in Salesforce.">
     <title>Field & Form — Product Store</title>
-    <link rel="stylesheet" href="/styles.css?v=customer-crm-sync-1">
-    <script src="/app.js?v=support-cases-2" defer></script>
+    <link rel="stylesheet" href="/styles.css?v=tech-storefront-3">
+    <script src="/app.js?v=tech-storefront-2" defer></script>
 </head>
 <body>
     <div class="preview-banner hidden" id="previewBanner">
@@ -20,7 +20,8 @@
         </a>
         <nav class="main-nav" aria-label="Main navigation">
             <a href="#catalog">Shop</a>
-            <a href="#story">Our standard</a>
+            <a href="#quickCategories">Categories</a>
+            <a href="#story">About</a>
             <button class="nav-text-button" id="customerSignIn">Sign in</button>
             <button class="nav-text-button" id="adminOpen">Store admin</button>
         </nav>
@@ -36,32 +37,36 @@
     <main id="top">
         <section class="hero">
             <div class="hero-copy">
-                <p class="eyebrow"><span class="eyebrow-line"></span> GOODS FOR GOOD WORK</p>
-                <h1>Useful things.<br><em>Thoughtfully chosen.</em></h1>
-                <p class="hero-description">A considered collection of everyday essentials, made to work hard and last longer.</p>
-                <a class="button button-dark" href="#catalog">Explore the collection <span aria-hidden="true">↗</span></a>
-                <div class="hero-note"><span class="note-star">✳</span> Live availability is checked at checkout.</div>
+                <p class="eyebrow"><span class="eyebrow-line"></span> FIELD &amp; FORM TECH</p>
+                <h1>Better sound.<br><em>Better everyday.</em></h1>
+                <p class="hero-description">Find thoughtful tech essentials for work, play, and everything in between.</p>
+                <a class="button button-dark" href="#catalog">Shop the collection <span aria-hidden="true">↗</span></a>
+                <div class="hero-note"><span class="note-star">✳</span> Live prices and availability from Salesforce.</div>
             </div>
-            <div class="hero-art" aria-label="Illustration of a product package and leaves">
+            <div class="hero-art" aria-label="Abstract illustration of premium headphones">
                 <div class="hero-sun"></div><div class="hero-ring"></div>
-                <div class="hero-box"><div class="box-label"><span>F&amp;F</span><b>ESSENTIALS<br>NO. 04</b><small>MADE FOR THE EVERYDAY</small></div><div class="box-flap"></div></div>
-                <div class="leaf leaf-one"></div><div class="leaf leaf-two"></div><div class="leaf leaf-three"></div>
-                <div class="hero-spark spark-one">✳</div><div class="hero-spark spark-two">✦</div>
-                <span class="art-caption">A LITTLE MORE<br>CONSIDERED</span>
+                <div class="hero-headphones"><div class="headband"></div><div class="earcup earcup-left"></div><div class="earcup earcup-right"></div><div class="earpad earpad-left"></div><div class="earpad earpad-right"></div></div>
+                <span class="hero-price">STAFF PICK<br><strong>Sound, reimagined</strong></span>
+                <div class="hero-spark spark-one">✦</div><div class="hero-spark spark-two">✦</div>
+                <span class="art-caption">MADE FOR<br>YOUR EVERY DAY</span>
             </div>
-            <div class="hero-footer"><span>BUILT FOR THE LONG HAUL</span><span>CURATED GOODS · RESPONSIBLE SOURCING</span><span>01 — 04</span></div>
+            <div class="hero-footer"><span>SMARTER PICKS</span><span>TECH THAT WORKS HARDER</span><span>FIELD &amp; FORM</span></div>
         </section>
 
-        <section class="trust-strip" aria-label="Store benefits">
-            <div><span class="trust-icon">✳</span><strong>Thoughtful by design</strong><small>Everyday goods with purpose</small></div>
-            <div><span class="trust-icon">↗</span><strong>Ready when you are</strong><small>Stock checked with every order</small></div>
-            <div><span class="trust-icon">⌂</span><strong>Made to make sense</strong><small>Practical, lasting essentials</small></div>
+        <section class="quick-categories" id="quickCategories" aria-labelledby="quickCategoryTitle">
+            <div class="mini-section-heading"><div><p class="eyebrow">FIND YOUR FIT</p><h2 id="quickCategoryTitle">Shop by category</h2></div><a class="text-link" href="#catalog">View all <span>→</span></a></div>
+            <div class="quick-category-grid" id="quickCategoryGrid"></div>
+        </section>
+
+        <section class="promo-banner">
+            <div class="promo-copy"><p class="eyebrow">CURATED FOR YOUR SETUP</p><h2>Make room for<br><em>better tech.</em></h2><p>Explore useful essentials, picked to fit your everyday.</p><a class="button button-dark" href="#catalog">Explore best sellers <span>↗</span></a></div>
+            <div class="promo-art" aria-hidden="true"><span class="promo-disc disc-one"></span><span class="promo-disc disc-two"></span><span class="promo-device"></span><span class="promo-orbit"></span></div>
         </section>
 
         <section class="catalog-section" id="catalog">
             <div class="section-heading">
-                <div><p class="eyebrow">THE COLLECTION</p><h2>Good things, <em>well made.</em></h2></div>
-                <p class="section-note">Selected for quality, usefulness, and the small details that make a difference.</p>
+                <div><p class="eyebrow">OUR COLLECTION</p><h2>Explore our <em>best sellers.</em></h2></div>
+                <p class="section-note">Browse the latest collection, with live stock and pricing.</p>
             </div>
             <div class="catalog-toolbar">
                 <div class="category-filters" id="categoryFilters" aria-label="Filter products"></div>
