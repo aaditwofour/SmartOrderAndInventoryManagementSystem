@@ -11,6 +11,8 @@ const state = {
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const money = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: state.currency, maximumFractionDigits: 2 }).format(Number(value) || 0);
+const GUEST_CART_KEY = 'field-form-cart:guest';
+let customerCartSaveTimer = null;
 
 async function api(path, options = {}) {
     const response = await fetch(path, {
@@ -151,6 +153,59 @@ async function refreshCatalog() {
     renderCategories();
     renderProducts();
     renderCart();
+}
+
+function cartStorageKey(email = state.customerProfile?.email) {
+    return email ? `field-form-cart:${email.trim().toLowerCase()}` : GUEST_CART_KEY;
+}
+
+function readStoredCart(key) {
+    try {
+        const saved = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(saved) ? saved : [];
+    } catch { return []; }
+}
+
+function applySavedCart(items) {
+    const availableIds = new Set(state.products.map(product => product.Id));
+    state.cart = new Map((items || [])
+        .filter(item => availableIds.has(item.productId) && Number.isInteger(Number(item.quantity)) && Number(item.quantity) > 0)
+        .map(item => [item.productId, Number(item.quantity)]));
+    renderProducts();
+    renderCart();
+}
+
+async function restoreCustomerProgress(profile) {
+    const guestCart = readStoredCart(GUEST_CART_KEY);
+    const saved = await api('/api/customer-progress');
+    const merged = new Map((saved.cart || []).map(item => [item.productId, Number(item.quantity)]));
+    for (const item of guestCart) merged.set(item.productId, (merged.get(item.productId) || 0) + Number(item.quantity || 0));
+    const cart = [...merged.entries()].map(([productId, quantity]) => ({ productId, quantity }));
+    applySavedCart(cart);
+    localStorage.setItem(cartStorageKey(profile.email), JSON.stringify(cart));
+    if (guestCart.length) {
+        await api('/api/customer-progress', { method: 'PUT', body: JSON.stringify({ cart }) });
+        localStorage.removeItem(GUEST_CART_KEY);
+    }
+}
+
+async function restoreGuestCart() {
+    applySavedCart(readStoredCart(GUEST_CART_KEY));
+}
+
+function scheduleCartSave() {
+    const cart = [...state.cart.entries()].map(([productId, quantity]) => ({ productId, quantity }));
+    localStorage.setItem(cartStorageKey(), JSON.stringify(cart));
+    clearTimeout(customerCartSaveTimer);
+    if (!state.customerProfile) return;
+    customerCartSaveTimer = setTimeout(async () => {
+        try {
+            await api('/api/customer-progress', { method: 'PUT', body: JSON.stringify({ cart }) });
+            localStorage.removeItem(GUEST_CART_KEY);
+        } catch (error) {
+            toast(`Your cart is saved on this device. ${error.message}`);
+        }
+    }, 300);
 }
 
 function formData(form) {
@@ -320,6 +375,7 @@ $('#productGrid').addEventListener('click', event => {
     if (!String(product.Id).startsWith('preview-') && current >= Number(product.Available_Quantity__c || 0)) return toast('There is not enough stock for another item.');
     state.cart.set(product.Id, current + 1);
     renderCart();
+    scheduleCartSave();
     toast(`${product.Name} added to your bag.`);
 });
 function updateCartFromEvent(event) {
@@ -337,6 +393,7 @@ function updateCartFromEvent(event) {
         }
     }
     renderCart();
+    scheduleCartSave();
 }
 $('#cartItems').addEventListener('click', updateCartFromEvent);
 $('#cartToggle').addEventListener('click', scrollToBag);
@@ -383,9 +440,10 @@ $('#customerCodeForm').addEventListener('submit', async event => {
             body: JSON.stringify({ email: $('#customerLoginEmail').value.trim(), code: $('#customerLoginCode').value.trim() })
         });
         applyCustomerProfile(result.profile);
+        await restoreCustomerProgress(result.profile);
         $('#customerLoginCode').value = '';
         $('#customerLoginModal').close();
-        toast('Signed in. Your saved details are ready for checkout.');
+        toast('Signed in. Your saved cart and checkout details are ready.');
     } catch (error) { setError($('#customerCodeError'), error.message); }
     finally { setBusy(button, false, 'Verify & sign in'); }
 });
@@ -396,7 +454,13 @@ $('#changeLoginEmail').addEventListener('click', () => {
     setError($('#customerCodeError'));
 });
 $('#customerSignOut').addEventListener('click', async () => {
-    try { await api('/api/customer-login/logout', { method: 'POST' }); }
+    clearTimeout(customerCartSaveTimer);
+    const cart = [...state.cart.entries()].map(([productId, quantity]) => ({ productId, quantity }));
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
+    try {
+        await api('/api/customer-progress', { method: 'PUT', body: JSON.stringify({ cart }) });
+        await api('/api/customer-login/logout', { method: 'POST' });
+    }
     catch { /* The local profile is cleared even if the server session expired. */ }
     state.customerProfile = null;
     $('#checkoutForm').reset();
@@ -439,6 +503,7 @@ $('#checkoutForm').addEventListener('submit', async event => {
         state.cart.clear();
         $('#checkoutModal').close();
         renderCart();
+        scheduleCartSave();
         showOrderResult(result);
         await refreshCatalog();
     } catch (err) { setError(error, err.message); }
@@ -489,8 +554,11 @@ async function initialize() {
         await refreshCatalog();
         try {
             const session = await api('/api/customer-login/profile');
-            if (session.profile) applyCustomerProfile(session.profile);
-        } catch { /* A visitor who is not signed in continues as a guest. */ }
+            if (session.profile) {
+                applyCustomerProfile(session.profile);
+                await restoreCustomerProgress(session.profile);
+            }
+        } catch { await restoreGuestCart(); }
         if (new URLSearchParams(location.search).has('connected')) {
             history.replaceState({}, '', '/');
             toast('Salesforce is connected. Live products are loading.');

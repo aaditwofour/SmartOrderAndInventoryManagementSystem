@@ -29,6 +29,26 @@
         <name>LightningComponentBundle</name>
     </types>
     <types>
+        <members>Field_Form_Store_Agent</members>
+        <name>AiAuthoringBundle</name>
+    </types>
+    <types>
+        <members>Field_Form_Store_Agent</members>
+        <name>AiAgentDefinition</name>
+    </types>
+    <types>
+        <members>Field_Form_Store_Agent#2</members>
+        <name>AiAgentDefinitionVersion</name>
+    </types>
+    <types>
+        <members>Product__c</members>
+        <name>CustomObject</name>
+    </types>
+    <types>
+        <members>Agentforce_Product_Assistant</members>
+        <name>PermissionSet</name>
+    </types>
+    <types>
         <members>*</members>
         <name>StaticResource</name>
     </types>

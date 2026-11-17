@@ -85,6 +85,43 @@ function clearStoredTokens() {
 
 loadStoredTokens();
 
+function customerSessionStorePath() {
+    return path.join(ROOT, '.oauth-secret', 'customer-sessions.json');
+}
+
+function persistCustomerSessions() {
+    const sessions = [...loginSessions.entries()].filter(([, value]) => value.expiresAt > Date.now());
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', tokenEncryptionKey(), iv);
+    const encrypted = Buffer.concat([cipher.update(JSON.stringify(sessions), 'utf8'), cipher.final()]);
+    fs.mkdirSync(path.dirname(customerSessionStorePath()), { recursive: true, mode: 0o700 });
+    fs.writeFileSync(customerSessionStorePath(), JSON.stringify({
+        iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64'), data: encrypted.toString('base64')
+    }), { mode: 0o600 });
+}
+
+function loadCustomerSessions() {
+    const file = customerSessionStorePath();
+    if (!idSecret || !fs.existsSync(file)) return;
+    try {
+        const stored = JSON.parse(fs.readFileSync(file, 'utf8'));
+        const decipher = crypto.createDecipheriv('aes-256-gcm', tokenEncryptionKey(), Buffer.from(stored.iv, 'base64'));
+        decipher.setAuthTag(Buffer.from(stored.tag, 'base64'));
+        const sessions = JSON.parse(Buffer.concat([
+            decipher.update(Buffer.from(stored.data, 'base64')),
+            decipher.final()
+        ]).toString('utf8'));
+        for (const [token, session] of sessions) {
+            if (session?.expiresAt > Date.now()) loginSessions.set(token, session);
+        }
+        persistCustomerSessions();
+    } catch (error) {
+        console.error('Could not restore encrypted customer sessions:', error.message);
+    }
+}
+
+loadCustomerSessions();
+
 function loadEnv(file) {
     if (!fs.existsSync(file)) return;
     const rows = fs.readFileSync(file, 'utf8').split(/\r?\n/);
@@ -375,6 +412,7 @@ async function verifyCustomerLoginCode(req, res) {
     };
     const token = crypto.randomBytes(32).toString('base64url');
     loginSessions.set(token, { profile, expiresAt: Date.now() + 4 * 60 * 60 * 1000 });
+    persistCustomerSessions();
     return sendJson(res, 200, { profile }, { 'Set-Cookie': customerSessionCookie(token, 4 * 60 * 60) });
 }
 
@@ -391,7 +429,50 @@ function getCustomerLoginProfile(req, res) {
 function endCustomerLogin(req, res) {
     const token = customerSessionToken(req);
     if (token) loginSessions.delete(token);
+    persistCustomerSessions();
     return sendJson(res, 200, { signedIn: false }, { 'Set-Cookie': customerSessionCookie('', 0) });
+}
+
+async function getCustomerProgressRecord(email) {
+    const customers = await querySalesforce(
+        `SELECT Id, Saved_Cart__c FROM Customer__c WHERE Email__c = '${soqlLiteral(email)}' LIMIT 2`
+    );
+    if (!customers.length) throw Object.assign(new Error('Customer account was not found.'), { statusCode: 404 });
+    if (customers.length > 1) throw Object.assign(new Error('This email matches multiple customer accounts.'), { statusCode: 409 });
+    return customers[0];
+}
+
+async function getCustomerProgress(req) {
+    const email = requireCustomerSession(req);
+    const record = await getCustomerProgressRecord(email);
+    try {
+        const saved = JSON.parse(record.Saved_Cart__c || '{}');
+        return { cart: Array.isArray(saved.cart) ? saved.cart : [] };
+    } catch { return { cart: [] }; }
+}
+
+async function saveCustomerProgress(req) {
+    const email = requireCustomerSession(req);
+    const body = await parseBody(req);
+    if (!Array.isArray(body.cart) || body.cart.length > 50) {
+        throw Object.assign(new Error('Saved cart must contain up to 50 products.'), { statusCode: 400 });
+    }
+    const cart = new Map();
+    for (const item of body.cart) {
+        const productId = String(item.productId || '');
+        const quantity = Number(item.quantity);
+        if (!/^[A-Za-z0-9]{15,18}$/.test(productId) || !Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
+            throw Object.assign(new Error('Saved cart contains an invalid product or quantity.'), { statusCode: 400 });
+        }
+        cart.set(productId, (cart.get(productId) || 0) + quantity);
+    }
+    const record = await getCustomerProgressRecord(email);
+    const savedCart = [...cart.entries()].map(([productId, quantity]) => ({ productId, quantity }));
+    await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/Customer__c/${record.Id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ Saved_Cart__c: JSON.stringify({ cart: savedCart, updatedAt: new Date().toISOString() }) })
+    });
+    return { saved: true, itemCount: savedCart.length };
 }
 
 async function findOrCreateCustomer(customer) {
@@ -848,6 +929,12 @@ async function handleApi(req, res, url) {
         }
         if (req.method === 'POST' && url.pathname === '/api/customer-login/logout') {
             return endCustomerLogin(req, res);
+        }
+        if (req.method === 'GET' && url.pathname === '/api/customer-progress') {
+            return sendJson(res, 200, await getCustomerProgress(req));
+        }
+        if (req.method === 'PUT' && url.pathname === '/api/customer-progress') {
+            return sendJson(res, 200, await saveCustomerProgress(req));
         }
         if (req.method === 'POST' && url.pathname === '/api/salesforce/connect') {
             if (!isConfigured()) throw Object.assign(new Error('Set SF_CLIENT_ID, SF_CALLBACK_URL, and a 32-character WEBSITE_ID_SECRET in website/.env first. This app allows an optional client secret.'), { statusCode: 503 });
