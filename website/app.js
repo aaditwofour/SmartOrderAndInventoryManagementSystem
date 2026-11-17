@@ -275,10 +275,10 @@ async function assistantAsk(event) {
         let data;
         if (orderQuestion) {
             data = await api('/api/assistant/order', { method: 'POST', body: JSON.stringify({ question }) });
-        } else if (productQuestion || !state.status?.geminiConfigured) {
-            data = await api('/api/assistant/query', { method: 'POST', body: JSON.stringify({ question }) });
         } else if (state.status?.connected && state.status?.geminiConfigured) {
             data = await api('/api/chat', { method: 'POST', body: JSON.stringify({ message: question }) });
+        } else if (productQuestion || !state.status?.geminiConfigured) {
+            data = await api('/api/assistant/query', { method: 'POST', body: JSON.stringify({ question }) });
         } else {
             assistantPush('I can help with product prices, stock, and order tracking. Ask about a product, or sign in to track an order.', 'bot');
             return;
