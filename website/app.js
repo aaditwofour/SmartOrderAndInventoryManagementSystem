@@ -5,7 +5,8 @@ const state = {
     cart: new Map(),
     currency: 'INR',
     requestId: null,
-    customerProfile: null
+    customerProfile: null,
+    caseFlow: null
 };
 
 const $ = selector => document.querySelector(selector);
@@ -260,6 +261,94 @@ function assistantThinking(on) {
     }
 }
 
+function startsSupportCaseRequest(question) {
+    return /\b(?:create|open|raise|file|submit|log)\b[\s\S]{0,50}\b(?:support\s+)?(?:ticket|case)\b/i.test(question)
+        || /\b(?:ticket|case)\b[\s\S]{0,35}\b(?:create|open|raise|file|submit)\b/i.test(question);
+}
+
+function startSupportCaseFlow() {
+    if (!state.status?.connected) {
+        assistantPush('I can create a support ticket once the store is connected to Salesforce.', 'bot');
+        return;
+    }
+    state.caseFlow = { step: 'subject', subject: '', description: '', name: '', email: '' };
+    assistantPush('I can create a Salesforce support case. What short title should I use for the issue?', 'bot');
+}
+
+async function continueSupportCaseFlow(answer) {
+    const flow = state.caseFlow;
+    const value = answer.trim();
+    if (/^(cancel|stop|never mind|nevermind)$/i.test(value)) {
+        state.caseFlow = null;
+        assistantPush('Okay, I cancelled the support ticket request. No case was created.', 'bot');
+        return;
+    }
+
+    if (flow.step === 'subject') {
+        if (value.length < 5 || value.length > 120) {
+            assistantPush('Please enter a short title between 5 and 120 characters.', 'bot');
+            return;
+        }
+        flow.subject = value;
+        flow.step = 'description';
+        assistantPush('Please describe what happened and what help you need. Leave out passwords and payment details.', 'bot');
+        return;
+    }
+    if (flow.step === 'description') {
+        if (value.length < 20 || value.length > 2000) {
+            assistantPush('Please add at least 20 characters of detail (up to 2,000).', 'bot');
+            return;
+        }
+        flow.description = value;
+        flow.step = 'name';
+        assistantPush('What name should support see on the case? You can reply “skip”.', 'bot');
+        return;
+    }
+    if (flow.step === 'name') {
+        flow.name = /^skip$/i.test(value) ? '' : value;
+        if (flow.name.length > 120) {
+            assistantPush('Please use a name under 120 characters, or reply “skip”.', 'bot');
+            return;
+        }
+        flow.step = 'email';
+        assistantPush('What email may support use to follow up? It is optional; reply “skip” to omit it.', 'bot');
+        return;
+    }
+    if (flow.step === 'email') {
+        flow.email = /^skip$/i.test(value) ? '' : value;
+        if (flow.email && !/^\S+@\S+\.\S+$/.test(flow.email)) {
+            assistantPush('That email does not look valid. Please try again or reply “skip”.', 'bot');
+            return;
+        }
+        flow.step = 'confirm';
+        const contactLine = flow.email ? `Follow-up email: ${flow.email}.` : 'No follow-up email was provided.';
+        const nameLine = flow.name ? `Name: ${flow.name}. ` : '';
+        assistantPush(`Please review the case: “${flow.subject}”. Details: ${flow.description} ${nameLine}${contactLine} Reply YES to create this Salesforce case, or CANCEL to discard it.`, 'bot');
+        return;
+    }
+    if (flow.step === 'confirm') {
+        if (!/^(yes|yes please|create|submit|confirm|go ahead)$/i.test(value)) {
+            assistantPush('Reply YES to create this case, or CANCEL to discard it.', 'bot');
+            return;
+        }
+        flow.step = 'submitting';
+        assistantThinking(true);
+        try {
+            const result = await api('/api/cases', {
+                method: 'POST',
+                body: JSON.stringify({ subject: flow.subject, description: flow.description, name: flow.name, email: flow.email })
+            });
+            state.caseFlow = null;
+            assistantPush(`Your support case was created in Salesforce. Case reference: ${result.caseId}.`, 'bot');
+        } catch (error) {
+            flow.step = 'confirm';
+            assistantPush(error.message || 'I could not create the support case. Please try again.', 'bot');
+        } finally {
+            assistantThinking(false);
+        }
+    }
+}
+
 async function assistantAsk(event) {
     event.preventDefault();
     const input = $('#assistantInput');
@@ -267,6 +356,15 @@ async function assistantAsk(event) {
     if (!question) return;
     assistantPush(question, 'user');
     input.value = '';
+    if (state.caseFlow) {
+        if (state.caseFlow.step === 'submitting') return;
+        await continueSupportCaseFlow(question);
+        return;
+    }
+    if (startsSupportCaseRequest(question)) {
+        startSupportCaseFlow();
+        return;
+    }
     assistantThinking(true);
     const orderQuestion = /\b(order|invoice|track|tracking|shipment|delivery)\b/i.test(question);
     const productQuestion = /\b(product|price|cost|stock|available|availability|inventory|quantity|reorder|laptop|mouse|keyboard|monitor|headphones?)\b/i.test(question)
@@ -523,7 +621,9 @@ $('#connectSalesforceButton').addEventListener('click', async () => {
 
 $('#disconnectSalesforceButton').addEventListener('click', async () => {
     try {
-        await api('/api/salesforce/disconnect', { method: 'POST', headers: { 'x-admin-key': $('#adminKeyInput').value } });
+        const key = $('#adminKeyInput').value;
+        await api('/api/salesforce/disconnect', { method: 'POST', headers: { 'x-admin-key': key } });
+        sessionStorage.setItem('storeAdminKey', key);
         state.status = await api('/api/status');
         renderConnection();
         await refreshCatalog();
@@ -533,16 +633,19 @@ $('#disconnectSalesforceButton').addEventListener('click', async () => {
 
 $('#productForm').addEventListener('submit', async event => {
     event.preventDefault();
+    const form = event.currentTarget;
+    const key = $('#adminKeyInput').value;
     const button = $('#saveProductButton');
     setError($('#productError'));
     setBusy(button, true, 'Saving product…');
-    const values = formData(event.currentTarget);
+    const values = formData(form);
     try {
         await api('/api/admin/products', {
-            method: 'POST', headers: { 'x-admin-key': $('#adminKeyInput').value },
+            method: 'POST', headers: { 'x-admin-key': key },
             body: JSON.stringify({ product: { name: values.name, productCode: values.productCode, unitPrice: Number(values.unitPrice), availableQuantity: Number(values.availableQuantity), reorderLevel: Number(values.reorderLevel), description: values.description } })
         });
-        event.currentTarget.reset();
+        sessionStorage.setItem('storeAdminKey', key);
+        form.reset();
         await refreshCatalog();
         toast('Product saved to Salesforce.');
     } catch (error) { setError($('#productError'), error.message); }

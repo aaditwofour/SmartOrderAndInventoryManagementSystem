@@ -13,6 +13,8 @@ const SALESFORCE_CORE_ORIGIN = 'https://valuehub72-dev-ed.develop.my.salesforce.
 const SALESFORCE_SCRT_ORIGIN = 'https://valuehub72-dev-ed.develop.my.salesforce-scrt.com';
 
 const PORT = Number(process.env.PORT || 4173);
+const allowedWebsiteOrigins = new Set((process.env.WEBSITE_ALLOWED_ORIGINS || `http://localhost:${PORT}`)
+    .split(',').map(origin => origin.trim()).filter(Boolean));
 const API_VERSION = process.env.SF_API_VERSION || '68.0';
 const STORE_CURRENCY = process.env.STORE_CURRENCY || 'INR';
 const LOGIN_URL = (process.env.SF_LOGIN_URL || 'https://login.salesforce.com').replace(/\/$/, '');
@@ -36,6 +38,7 @@ const mimeTypes = {
 
 const oauthStates = new Map();
 const orderAttempts = new Map();
+const supportCaseAttempts = new Map();
 const loginChallenges = new Map();
 const loginSessions = new Map();
 const loginAttemptWindows = new Map();
@@ -320,6 +323,16 @@ function rateLimit(req) {
     if (recent.length >= 12) throw Object.assign(new Error('Please wait a few minutes before placing another order.'), { statusCode: 429 });
     recent.push(now);
     orderAttempts.set(key, recent);
+}
+
+function rateLimitSupportCase(req) {
+    const now = Date.now();
+    const key = req.socket.remoteAddress || 'unknown';
+    const existing = supportCaseAttempts.get(key) || [];
+    const recent = existing.filter(time => now - time < 60 * 60 * 1000);
+    if (recent.length >= 5) throw Object.assign(new Error('You have reached the support ticket limit. Please try again later.'), { statusCode: 429 });
+    recent.push(now);
+    supportCaseAttempts.set(key, recent);
 }
 
 function rateLimitLogin(key, maximum, windowMs) {
@@ -806,6 +819,63 @@ function requireCustomerSession(req) {
     return session.profile.email;
 }
 
+async function createSupportCase(req) {
+    const origin = String(req.headers.origin || '');
+    if (!allowedWebsiteOrigins.has(origin)) {
+        throw Object.assign(new Error('Support tickets can only be submitted from the storefront.'), { statusCode: 403 });
+    }
+    if (!accessTokenConfigured()) {
+        throw Object.assign(new Error('Support ticket creation is unavailable until Salesforce is connected.'), { statusCode: 503 });
+    }
+    rateLimitSupportCase(req);
+
+    const body = await parseBody(req, 12_000);
+    const subject = String(body.subject || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+    const description = String(body.description || '').replace(/\u0000/g, '').trim();
+    const name = String(body.name || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+    const suppliedEmail = String(body.email || '').trim();
+    const phone = String(body.phone || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+
+    if (subject.length < 5 || subject.length > 120) {
+        throw Object.assign(new Error('Ticket title must be between 5 and 120 characters.'), { statusCode: 400 });
+    }
+    if (description.length < 20 || description.length > 5000) {
+        throw Object.assign(new Error('Please provide 20 to 5,000 characters describing the issue.'), { statusCode: 400 });
+    }
+    if (name.length > 120 || phone.length > 40) {
+        throw Object.assign(new Error('Contact details are too long.'), { statusCode: 400 });
+    }
+    if (suppliedEmail && normalizeEmail(suppliedEmail) !== suppliedEmail.toLowerCase()) {
+        throw Object.assign(new Error('Enter a valid email address or skip the email field.'), { statusCode: 400 });
+    }
+
+    const fields = {
+        Subject: subject,
+        Description: description,
+        Origin: 'Web',
+        Status: 'New'
+    };
+    if (name) fields.SuppliedName = name;
+    if (suppliedEmail) fields.SuppliedEmail = suppliedEmail.toLowerCase();
+    if (phone) fields.SuppliedPhone = phone;
+
+    let result;
+    try {
+        result = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/Case/`, {
+            method: 'POST',
+            body: JSON.stringify(fields)
+        });
+    } catch (error) {
+        console.error('Salesforce support case creation failed:', error?.statusCode || error?.message || 'Unknown Salesforce error');
+        throw Object.assign(new Error('I could not submit the support ticket. Please try again or contact the store.'), { statusCode: 502 });
+    }
+
+    if (!result?.success || !result?.id) {
+        throw Object.assign(new Error('Salesforce did not confirm the support ticket.'), { statusCode: 502 });
+    }
+    return { source: 'salesforce', caseId: result.id };
+}
+
 async function callAssistantLookup(lookupType, lookupValue, customerEmail = '') {
     if (!accessTokenConfigured()) throw Object.assign(new Error('Salesforce is not connected.'), { statusCode: 503 });
     const response = await salesforceRequest(
@@ -957,6 +1027,9 @@ async function handleApi(req, res, url) {
         }
         if (req.method === 'POST' && url.pathname === '/api/assistant/order') {
             return sendJson(res, 200, await assistantOrderQuery(req));
+        }
+        if (req.method === 'POST' && url.pathname === '/api/cases') {
+            return sendJson(res, 201, await createSupportCase(req));
         }
         if (req.method === 'POST' && url.pathname === '/api/chat') {
             return sendJson(res, 200, await geminiChat(req));

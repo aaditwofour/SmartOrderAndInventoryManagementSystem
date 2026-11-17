@@ -7,7 +7,7 @@
     <meta name="description" content="Browse the catalog, check live stock, and place an order. Orders are managed in Salesforce.">
     <title>Field & Form — Product Store</title>
     <link rel="stylesheet" href="/styles.css?v=customer-crm-sync-1">
-    <script src="/app.js?v=gemini-storefront-1" defer></script>
+    <script src="/app.js?v=support-cases-2" defer></script>
 </head>
 <body>
     <div class="preview-banner hidden" id="previewBanner">
@@ -192,18 +192,18 @@
             <div class="assistant-head">
                 <div>
                     <p class="eyebrow">STORE ASSISTANT</p>
-                    <h2>Ask about products</h2>
+                    <h2>How can I help?</h2>
                 </div>
                 <button class="icon-button" id="assistantClose" aria-label="Close assistant" type="button">×</button>
             </div>
             <div class="assistant-body" id="assistantBody">
                 <div class="assistant-message assistant-message-bot">
                     <span class="assistant-avatar">✦</span>
-                    <div class="assistant-bubble">Hi! I can answer questions about our products — prices, stock, and availability. Try asking <em>“Is the laptop in stock?”</em> or <em>“What is the price of the keyboard?”</em>.</div>
+                    <div class="assistant-bubble">Ask me about products, prices, and stock. To get help from our support team, say <em>“raise a support ticket”</em>; I’ll collect the details and ask you to confirm before creating a Salesforce case.</div>
                 </div>
             </div>
             <form class="assistant-input" id="assistantForm">
-                <input type="text" id="assistantInput" placeholder="Ask about a product…" autocomplete="off" maxlength="200">
+                <input type="text" id="assistantInput" placeholder="Ask about products or raise a ticket…" autocomplete="off" maxlength="2000">
                 <button type="submit" id="assistantSend" class="button button-dark">Send</button>
             </form>
         </div>
