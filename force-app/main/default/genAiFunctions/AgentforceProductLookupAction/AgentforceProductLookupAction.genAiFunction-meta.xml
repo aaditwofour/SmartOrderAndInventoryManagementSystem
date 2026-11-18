@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiFunction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Search active Field &amp; Form products by name or product code and return live current price, available quantity, and description. Read-only.</description>
+    <developerName>AgentforceProductLookupAction</developerName>
+    <invocationTarget>AgentforceProductLookupAction</invocationTarget>
+    <invocationTargetType>apex</invocationTargetType>
+    <isConfirmationRequired>false</isConfirmationRequired>
+    <isIncludeInProgressIndicator>true</isIncludeInProgressIndicator>
+    <masterLabel>Find Store Products</masterLabel>
+    <progressIndicatorMessage>Looking up current product inventory...</progressIndicatorMessage>
+</GenAiFunction>

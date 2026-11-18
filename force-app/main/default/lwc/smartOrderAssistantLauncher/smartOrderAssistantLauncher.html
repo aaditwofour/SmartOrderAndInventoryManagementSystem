@@ -1,0 +1,40 @@
+<template>
+    <lightning-card title="Field &amp; Form Store Operations Assistant" icon-name="standard:product">
+        <div class="assistant-shell slds-var-p-horizontal_medium slds-var-p-bottom_medium">
+            <p class="slds-text-color_weak slds-var-m-bottom_small">
+                Search one or more product names or codes for live prices and stock. This read-only assistant does not create orders.
+            </p>
+            <div class="conversation" role="log" aria-live="polite" aria-relevant="additions">
+                <template for:each={messages} for:item="message">
+                    <div key={message.id} class={message.className}>
+                        <span class="message-label">{message.label}</span>
+                        <lightning-formatted-text value={message.text}></lightning-formatted-text>
+                    </div>
+                </template>
+                <template lwc:if={isLoading}>
+                    <div class="assistant-message" role="status">
+                        <lightning-spinner alternative-text="Searching products" size="small"></lightning-spinner>
+                    </div>
+                </template>
+            </div>
+            <div class="composer">
+                <lightning-input
+                    type="text"
+                    label="Product name or code"
+                    placeholder="For example, laptop or LAP-001"
+                    value={searchText}
+                    onchange={handleInput}
+                    onkeydown={handleKeydown}
+                    disabled={isLoading}
+                ></lightning-input>
+                <lightning-button
+                    class="send-button"
+                    label={buttonLabel}
+                    variant="brand"
+                    disabled={isSendDisabled}
+                    onclick={handleSend}
+                ></lightning-button>
+            </div>
+        </div>
+    </lightning-card>
+</template>

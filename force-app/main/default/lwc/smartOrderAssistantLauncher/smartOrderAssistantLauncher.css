@@ -1,0 +1,60 @@
+.assistant-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.conversation {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-height: 8rem;
+    max-height: 22rem;
+    overflow-y: auto;
+    padding: 0.75rem;
+    border: 1px solid #dddbda;
+    border-radius: 0.5rem;
+    background: #f8f9fb;
+}
+
+.assistant-message,
+.user-message {
+    max-width: 88%;
+    padding: 0.7rem 0.8rem;
+    border-radius: 0.75rem;
+    white-space: pre-wrap;
+}
+
+.assistant-message {
+    align-self: flex-start;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+}
+
+.user-message {
+    align-self: flex-end;
+    background: #eaf3ff;
+    border: 1px solid #b8d7ff;
+}
+
+.message-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #444;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.error-message {
+    border-color: #ea001e;
+}
+
+.composer {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.send-button {
+    padding-bottom: 0.1rem;
+}

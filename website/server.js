@@ -39,6 +39,7 @@ const mimeTypes = {
 const oauthStates = new Map();
 const orderAttempts = new Map();
 const supportCaseAttempts = new Map();
+const analyticsAttempts = new Map();
 const loginChallenges = new Map();
 const loginSessions = new Map();
 const loginAttemptWindows = new Map();
@@ -281,6 +282,38 @@ async function querySalesforce(soql) {
     return records;
 }
 
+async function recordStorefrontPageView(req) {
+    const origin = String(req.headers.origin || '');
+    if (!allowedWebsiteOrigins.has(origin)) {
+        throw Object.assign(new Error('Page views can only be recorded from the storefront.'), { statusCode: 403 });
+    }
+    if (!accessTokenConfigured()) {
+        throw Object.assign(new Error('Page view tracking is unavailable until Salesforce is connected.'), { statusCode: 503 });
+    }
+    if (idSecret.length < 32) {
+        throw Object.assign(new Error('Page view tracking requires WEBSITE_ID_SECRET to be configured.'), { statusCode: 503 });
+    }
+    rateLimitAnalytics(req);
+    const body = await parseBody(req, 4096);
+    const visitorId = String(body.visitorId || '');
+    const sessionId = String(body.sessionId || '');
+    const pageViewId = String(body.pageViewId || '');
+    if (![visitorId, sessionId, pageViewId].every(value => /^[a-f0-9-]{36}$/i.test(value))) {
+        throw Object.assign(new Error('Invalid page view identifiers.'), { statusCode: 400 });
+    }
+    const parsedPath = new URL(String(body.path || '/'), origin);
+    const pagePath = `${parsedPath.pathname}${parsedPath.hash}`.slice(0, 255) || '/';
+    return salesforceRequest('/services/apexrest/website/analytics/visit', {
+        method: 'POST',
+        body: JSON.stringify({
+            visitorKey: stableId('storefront-visitor', visitorId),
+            sessionKey: stableId('storefront-session', sessionId),
+            pageViewKey: stableId('storefront-page-view', pageViewId),
+            path: pagePath
+        })
+    });
+}
+
 function soqlLiteral(value) {
     return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
@@ -333,6 +366,15 @@ function rateLimitSupportCase(req) {
     if (recent.length >= 5) throw Object.assign(new Error('You have reached the support ticket limit. Please try again later.'), { statusCode: 429 });
     recent.push(now);
     supportCaseAttempts.set(key, recent);
+}
+
+function rateLimitAnalytics(req) {
+    const now = Date.now();
+    const key = req.socket.remoteAddress || 'unknown';
+    const recent = (analyticsAttempts.get(key) || []).filter(time => now - time < 15 * 60 * 1000);
+    if (recent.length >= 300) throw Object.assign(new Error('Visit tracking limit reached. Please try again later.'), { statusCode: 429 });
+    recent.push(now);
+    analyticsAttempts.set(key, recent);
 }
 
 function rateLimitLogin(key, maximum, windowMs) {
@@ -946,6 +988,9 @@ async function handleApi(req, res, url) {
         if (req.method === 'GET' && url.pathname === '/api/products') {
             const result = await listProducts();
             return sendJson(res, 200, result);
+        }
+        if (req.method === 'POST' && url.pathname === '/api/analytics/page-view') {
+            return sendJson(res, 200, await recordStorefrontPageView(req));
         }
         if (req.method === 'POST' && url.pathname === '/api/customer-login/request-code') {
             return sendJson(res, 200, await requestCustomerLoginCode(req));

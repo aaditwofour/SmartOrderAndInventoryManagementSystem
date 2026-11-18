@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>Field &amp; Form Inventory Assistant</masterLabel>
+    <description>Home page product and inventory lookup assistant backed by Salesforce data.</description>
+    <targets>
+        <target>lightning__HomePage</target>
+        <target>lightning__AppPage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__HomePage,lightning__AppPage">
+            <property name="botId" type="String" label="Agent ID" description="Retained for existing Lightning page configurations." />
+            <property name="buttonLabel" type="String" label="Search Button Label" default="Search" />
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

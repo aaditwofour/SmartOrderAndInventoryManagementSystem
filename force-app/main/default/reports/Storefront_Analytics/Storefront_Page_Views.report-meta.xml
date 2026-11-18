@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns><field>Storefront_Page_View__c.Viewed_At__c</field></columns>
+    <columns><field>Storefront_Page_View__c.Page_Path__c</field></columns>
+    <columns><field>Storefront_Page_View__c.Visitor__c</field></columns>
+    <description>Recorded storefront page views. Each row is one full page load.</description>
+    <format>Tabular</format>
+    <name>Storefront Page Views</name>
+    <reportType>CustomEntity$Storefront_Page_View__c</reportType>
+    <scope>organization</scope>
+    <showDetails>true</showDetails>
+    <showGrandTotal>true</showGrandTotal>
+</Report>

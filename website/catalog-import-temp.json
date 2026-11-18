@@ -1,0 +1,88 @@
+{
+  "records": [
+    {
+      "Description__c": null,
+      "Product_Code__c": "HDR-001",
+      "Name": "Headphones",
+      "Reorder_Level__c": 10,
+      "attributes": {
+        "referenceId": "headphones",
+        "type": "Product__c"
+      },
+      "Website_Product_ID__c": "44af6c6b-cc80-4099-83ca-32cb283c0131",
+      "Active__c": true,
+      "Available_Quantity__c": 34,
+      "Unit_Price__c": 2500
+    },
+    {
+      "Description__c": null,
+      "Product_Code__c": "KEY-001",
+      "Name": "Keyboard",
+      "Reorder_Level__c": 5,
+      "attributes": {
+        "referenceId": "keyboard",
+        "type": "Product__c"
+      },
+      "Website_Product_ID__c": "f3eee310-8f65-402b-8a07-7d8580819713",
+      "Active__c": true,
+      "Available_Quantity__c": 27,
+      "Unit_Price__c": 1500
+    },
+    {
+      "Description__c": null,
+      "Product_Code__c": "LAP-001",
+      "Name": "Laptop",
+      "Reorder_Level__c": 5,
+      "attributes": {
+        "referenceId": "laptop",
+        "type": "Product__c"
+      },
+      "Website_Product_ID__c": "023aa369-ae6b-492e-8f5b-4ca6254bbf82",
+      "Active__c": true,
+      "Available_Quantity__c": 17,
+      "Unit_Price__c": 55000
+    },
+    {
+      "Description__c": null,
+      "Product_Code__c": "MON-001",
+      "Name": "Monitor",
+      "Reorder_Level__c": 5,
+      "attributes": {
+        "referenceId": "monitor",
+        "type": "Product__c"
+      },
+      "Website_Product_ID__c": "18b0bb28-0c9a-47ff-b095-6ff5ee96ce09",
+      "Active__c": true,
+      "Available_Quantity__c": 12,
+      "Unit_Price__c": 12000
+    },
+    {
+      "Description__c": null,
+      "Product_Code__c": "MOU-001",
+      "Name": "Mouse",
+      "Reorder_Level__c": 10,
+      "attributes": {
+        "referenceId": "mouse",
+        "type": "Product__c"
+      },
+      "Website_Product_ID__c": "318b04ad-2a30-43c3-a9f8-b149d212f444",
+      "Active__c": true,
+      "Available_Quantity__c": 46,
+      "Unit_Price__c": 800
+    },
+    {
+      "Description__c": "It is important part of cpu the product is amd ryzen and ge rtx 4050",
+      "Product_Code__c": "SKU-020",
+      "Name": "RAM",
+      "Reorder_Level__c": 2,
+      "attributes": {
+        "referenceId": "ram",
+        "type": "Product__c"
+      },
+      "Website_Product_ID__c": "a4b82d7b-bdbc-47d9-a9d9-8fde486091ba",
+      "Active__c": true,
+      "Available_Quantity__c": 50,
+      "Unit_Price__c": 140000
+    }
+  ]
+}

@@ -1,5 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionOverrides>
+        <actionName>Tab</actionName>
+        <comment>Assign the Field &amp; Form Home page with its inventory assistant.</comment>
+        <content>Home_Page_Default</content>
+        <formFactor>Large</formFactor>
+        <pageOrSobjectType>standard-home</pageOrSobjectType>
+        <type>Flexipage</type>
+    </actionOverrides>
     <formFactors>Small</formFactors>
     <formFactors>Medium</formFactors>
     <formFactors>Large</formFactors>
@@ -7,7 +15,7 @@
     <isNavPersonalizationDisabled>true</isNavPersonalizationDisabled>
     <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
     <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
-    <label>Sales</label>
+    <label>Field and Form</label>
     <navType>Standard</navType>
     <tabs>standard-home</tabs>
     <tabs>standard-Opportunity</tabs>

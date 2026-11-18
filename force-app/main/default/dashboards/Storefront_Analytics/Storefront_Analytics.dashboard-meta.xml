@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dashboard xmlns="http://soap.sforce.com/2006/04/metadata">
+    <backgroundEndColor>#FFFFFF</backgroundEndColor>
+    <backgroundFadeDirection>LeftToRight</backgroundFadeDirection>
+    <backgroundStartColor>#F4F8F7</backgroundStartColor>
+    <dashboardType>SpecifiedUser</dashboardType>
+    <description>Tracks Field and Form storefront page views, unique visitors, and repeat visitors.</description>
+    <leftSection>
+        <columnSize>Wide</columnSize>
+        <components>
+            <componentType>Metric</componentType>
+            <header>Page Views</header>
+            <indicatorHighColor>#2E844A</indicatorHighColor>
+            <indicatorLowColor>#BA0517</indicatorLowColor>
+            <indicatorMiddleColor>#FFB75D</indicatorMiddleColor>
+            <metricLabel>Total page views</metricLabel>
+            <report>Storefront_Analytics/Storefront_Page_Views</report>
+            <title>Storefront Page Views</title>
+        </components>
+    </leftSection>
+    <middleSection>
+        <columnSize>Wide</columnSize>
+        <components>
+            <componentType>Metric</componentType>
+            <header>Unique Visitors</header>
+            <indicatorHighColor>#2E844A</indicatorHighColor>
+            <indicatorLowColor>#BA0517</indicatorLowColor>
+            <indicatorMiddleColor>#FFB75D</indicatorMiddleColor>
+            <metricLabel>Unique browsers</metricLabel>
+            <report>Storefront_Analytics/Storefront_Visitors</report>
+            <title>Unique Storefront Visitors</title>
+        </components>
+    </middleSection>
+    <rightSection>
+        <columnSize>Wide</columnSize>
+        <components>
+            <componentType>Metric</componentType>
+            <header>Repeat Visitors</header>
+            <indicatorHighColor>#2E844A</indicatorHighColor>
+            <indicatorLowColor>#BA0517</indicatorLowColor>
+            <indicatorMiddleColor>#FFB75D</indicatorMiddleColor>
+            <metricLabel>Visitors with 2+ sessions</metricLabel>
+            <report>Storefront_Analytics/Storefront_Repeat_Visitors</report>
+            <title>Repeat Visitors</title>
+        </components>
+    </rightSection>
+    <textColor>#153C38</textColor>
+    <title>Storefront Analytics</title>
+    <titleColor>#153C38</titleColor>
+    <titleSize>18</titleSize>
+</Dashboard>

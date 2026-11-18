@@ -1,0 +1,14 @@
+{
+  "required": ["searchText"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "searchText": {
+      "title": "Product name or code",
+      "description": "A product name, keyword, or product code from the employee's request.",
+      "lightning:type": "lightning__textType",
+      "lightning:isPII": false,
+      "copilotAction:isUserInput": true
+    }
+  },
+  "lightning:type": "lightning__objectType"
+}

@@ -13,6 +13,8 @@ const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const money = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: state.currency, maximumFractionDigits: 2 }).format(Number(value) || 0);
 const GUEST_CART_KEY = 'field-form-cart:guest';
+const VISITOR_ID_KEY = 'field-form-analytics:visitor';
+const VISIT_SESSION_KEY = 'field-form-analytics:session';
 let customerCartSaveTimer = null;
 
 async function api(path, options = {}) {
@@ -23,6 +25,40 @@ async function api(path, options = {}) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `Request failed (${response.status}).`);
     return data;
+}
+
+function getAnalyticsVisitorId() {
+    let visitorId = localStorage.getItem(VISITOR_ID_KEY);
+    if (!visitorId) {
+        visitorId = crypto.randomUUID();
+        localStorage.setItem(VISITOR_ID_KEY, visitorId);
+    }
+    return visitorId;
+}
+
+function getAnalyticsSessionId() {
+    const now = Date.now();
+    let session;
+    try { session = JSON.parse(localStorage.getItem(VISIT_SESSION_KEY) || 'null'); } catch { session = null; }
+    if (!session?.id || now - Number(session.lastSeen || 0) > 30 * 60 * 1000) {
+        session = { id: crypto.randomUUID(), lastSeen: now };
+    } else {
+        session.lastSeen = now;
+    }
+    localStorage.setItem(VISIT_SESSION_KEY, JSON.stringify(session));
+    return session.id;
+}
+
+function recordPageView() {
+    api('/api/analytics/page-view', {
+        method: 'POST',
+        body: JSON.stringify({
+            visitorId: getAnalyticsVisitorId(),
+            sessionId: getAnalyticsSessionId(),
+            pageViewId: crypto.randomUUID(),
+            path: `${location.pathname}${location.hash}`
+        })
+    }).catch(() => {});
 }
 
 function setError(element, message = '') {
@@ -680,6 +716,7 @@ $('#productForm').addEventListener('submit', async event => {
 });
 
 async function initialize() {
+    recordPageView();
     try {
         await refreshCatalog();
         try {

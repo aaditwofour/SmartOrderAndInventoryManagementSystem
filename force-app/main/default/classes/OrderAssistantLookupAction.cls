@@ -45,15 +45,36 @@ public with sharing class OrderAssistantLookupAction {
 
     private static String lookupStock(String searchValue) {
         if (String.isBlank(searchValue)) return 'Enter a product name or product code.';
-        String searchPattern = '%' + searchValue.trim() + '%';
-        List<Product__c> products = [
-            SELECT Name, Product_Code__c, Unit_Price__c, Available_Quantity__c, Reorder_Level__c, Description__c
-            FROM Product__c
-            WHERE Active__c = true AND (Name LIKE :searchPattern OR Product_Code__c LIKE :searchPattern)
-            WITH USER_MODE
-            ORDER BY Name
-            LIMIT 10
-        ];
+        List<String> searchTerms = new List<String>{ searchValue.trim() };
+        for (String token : searchValue.trim().split('[^a-zA-Z0-9]+')) {
+            if (String.isBlank(token)) continue;
+
+            Boolean numericOnly = true;
+            for (Integer index = 0; index < token.length(); index++) {
+                if (!'0123456789'.contains(token.substring(index, index + 1))) {
+                    numericOnly = false;
+                    break;
+                }
+            }
+            if (!numericOnly) searchTerms.add(token);
+        }
+        if (searchTerms.isEmpty()) return 'Enter a product name or product code.';
+
+        Map<String, Object> bindValues = new Map<String, Object>();
+        List<String> matchingTerms = new List<String>();
+        Integer termNumber = 0;
+        for (String term : searchTerms) {
+            String bindName = 'searchTerm' + termNumber++;
+            bindValues.put(bindName, '%' + term + '%');
+            matchingTerms.add('Name LIKE :' + bindName);
+            matchingTerms.add('Product_Code__c LIKE :' + bindName);
+        }
+        String queryString = 'SELECT Name, Product_Code__c, Unit_Price__c, Available_Quantity__c, Reorder_Level__c, Description__c '
+            + 'FROM Product__c WHERE Active__c = true AND (' + String.join(matchingTerms, ' OR ') + ') '
+            + 'WITH USER_MODE ORDER BY Name LIMIT 10';
+        List<Product__c> products = (List<Product__c>) Database.queryWithBinds(
+            queryString, bindValues, AccessLevel.USER_MODE
+        );
         if (products.isEmpty()) return 'No active products matched that search.';
 
         List<String> summaries = new List<String>();
