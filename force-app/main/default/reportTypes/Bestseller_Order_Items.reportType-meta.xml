@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ReportType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <baseObject>Order_Item__c</baseObject>
+    <category>products</category>
+    <deployed>true</deployed>
+    <description>Order item quantities and products for ranking bestsellers by units ordered.</description>
+    <label>Bestseller Order Items</label>
+    <sections>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Name</field>
+            <table>Order_Item__c</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Product__c</field>
+            <table>Order_Item__c</table>
+        </columns>
+        <columns>
+            <checkedByDefault>true</checkedByDefault>
+            <field>Quantity__c</field>
+            <table>Order_Item__c</table>
+        </columns>
+        <columns>
+            <checkedByDefault>false</checkedByDefault>
+            <field>Unit_Price__c</field>
+            <table>Order_Item__c</table>
+        </columns>
+        <masterLabel>Order Item Fields</masterLabel>
+    </sections>
+</ReportType>

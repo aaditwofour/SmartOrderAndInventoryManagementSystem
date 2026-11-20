@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Bestseller_Order_Items</members>
+        <name>ReportType</name>
+    </types>
+    <types>
+        <members>Storefront_Analytics/Bestsellers_By_Units</members>
+        <members>Storefront_Analytics/Active_Products</members>
+        <members>Storefront_Analytics/Total_Products</members>
+        <name>Report</name>
+    </types>
+    <types>
+        <members>Storefront_Analytics/Bestsellers</members>
+        <members>Storefront_Analytics/Total_Products</members>
+        <name>Dashboard</name>
+    </types>
+    <version>68.0</version>
+</Package>

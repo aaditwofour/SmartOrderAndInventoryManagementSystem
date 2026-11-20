@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dashboard xmlns="http://soap.sforce.com/2006/04/metadata">
+    <backgroundEndColor>#FFFFFF</backgroundEndColor>
+    <backgroundFadeDirection>LeftToRight</backgroundFadeDirection>
+    <backgroundStartColor>#F4F8F7</backgroundStartColor>
+    <dashboardType>SpecifiedUser</dashboardType>
+    <description>Shows the total number of product records and links to the product inventory report.</description>
+    <leftSection>
+        <columnSize>Wide</columnSize>
+        <components>
+            <componentType>Metric</componentType>
+            <header>Total Product Records</header>
+            <indicatorHighColor>#2E844A</indicatorHighColor>
+            <indicatorLowColor>#BA0517</indicatorLowColor>
+            <indicatorMiddleColor>#FFB75D</indicatorMiddleColor>
+            <metricLabel>Products</metricLabel>
+            <report>Storefront_Analytics/Total_Products</report>
+            <title>Total Products</title>
+        </components>
+    </leftSection>
+    <rightSection>
+        <columnSize>Wide</columnSize>
+        <components>
+            <componentType>Metric</componentType>
+            <header>Active Products</header>
+            <indicatorHighColor>#2E844A</indicatorHighColor>
+            <indicatorLowColor>#BA0517</indicatorLowColor>
+            <indicatorMiddleColor>#FFB75D</indicatorMiddleColor>
+            <metricLabel>Active products</metricLabel>
+            <report>Storefront_Analytics/Active_Products</report>
+            <title>Active Products</title>
+        </components>
+    </rightSection>
+    <textColor>#153C38</textColor>
+    <title>Total Products</title>
+    <titleColor>#153C38</titleColor>
+    <titleSize>18</titleSize>
+</Dashboard>

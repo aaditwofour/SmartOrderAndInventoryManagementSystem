@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns>
+        <field>CUST_NAME</field>
+    </columns>
+    <columns>
+        <field>Product__c.Product_Code__c</field>
+    </columns>
+    <columns>
+        <field>Product__c.Active__c</field>
+    </columns>
+    <columns>
+        <field>Product__c.Available_Quantity__c</field>
+    </columns>
+    <description>All product records and their active status. The report row count is the total product count.</description>
+    <format>Tabular</format>
+    <name>Total Products</name>
+    <reportType>CustomEntity$Product__c</reportType>
+    <scope>organization</scope>
+    <showDetails>true</showDetails>
+    <showGrandTotal>true</showGrandTotal>
+</Report>

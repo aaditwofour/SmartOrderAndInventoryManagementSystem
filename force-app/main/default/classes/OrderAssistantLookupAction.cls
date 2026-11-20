@@ -71,7 +71,7 @@ public with sharing class OrderAssistantLookupAction {
         }
         String queryString = 'SELECT Name, Product_Code__c, Unit_Price__c, Available_Quantity__c, Reorder_Level__c, Description__c '
             + 'FROM Product__c WHERE Active__c = true AND (' + String.join(matchingTerms, ' OR ') + ') '
-            + 'WITH USER_MODE ORDER BY Name LIMIT 10';
+            + 'ORDER BY Name LIMIT 10';
         List<Product__c> products = (List<Product__c>) Database.queryWithBinds(
             queryString, bindValues, AccessLevel.USER_MODE
         );
